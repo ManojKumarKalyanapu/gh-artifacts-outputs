@@ -1,0 +1,68 @@
+What Are Job Artifacts?
+Artifacts are files generated during a workflow run (e.g., test results, build outputs, logs) that you want to save and share between jobs or download after a run.
+
+How to Use Artifacts
+GitHub provides two built-in actions to handle artifacts:
+1. Upload Artifact
+- name: Upload build artifact
+  uses: actions/upload-artifact@v4
+  with:
+    name: my-artifact
+    path: ./build/
+
+| Key    | Description                     |
+| ------ | ------------------------------- |
+| `name` | Name of the artifact.           |
+| `path` | File(s) or folder(s) to upload. |
+
+2. Download Artifact
+- name: Download build artifact
+  uses: actions/download-artifact@v4
+  with:
+    name: my-artifact
+    path: ./downloaded/
+
+| Key    | Description                       |
+| ------ | --------------------------------- |
+| `name` | Name of the artifact to download. |
+| `path` | Destination directory.            |
+
+
+Sharing Artifacts Between Jobs
+Use upload-artifact in one job and download-artifact in another job. Make sure the downloading job uses needs: to depend on the uploading job.
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - run: echo "build output" > output.txt
+      - uses: actions/upload-artifact@v4
+        with:
+          name: result
+          path: output.txt
+
+  test:
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: result
+      - run: cat output.txt
+
+| Limit             | Value                          |
+| ----------------- | ------------------------------ |
+| Retention         | Default 90 days (customizable) |
+| Max artifact size | 5 GB per artifact              |
+| Max total per run | 10 GB                          |
+
+Artifacts are stored per workflow run, and are downloadable from the GitHub UI or via the GitHub API.
+
+Best Practices
+✅ Use artifacts to share data between jobs.
+
+✅ Archive build outputs, test reports, or logs.
+
+❌ Don't store sensitive information (use secrets or encrypted storage).
+
+✅ Clean up unnecessary files before uploading.
