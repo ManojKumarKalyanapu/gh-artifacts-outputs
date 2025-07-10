@@ -30,7 +30,7 @@ jobs:
       - name: Publish JS filename
         id: publish
         # this step is used to publish the name of the script file to the output of the
-        run: find dist/assests/*.js -type f -execdir echo 'script-file={}' >> $GITHUB_OUTPUT ';' # this script-file name should be not the same as the output name it can be anything
+        run: find dist/assets/*.js -type f -execdir echo 'script-file={}' >> $GITHUB_OUTPUT ';' # this script-file name should be not the same as the output name it can be anything
       - name: upload artifacts
         uses: actions/upload-artifact@v4
         with:
