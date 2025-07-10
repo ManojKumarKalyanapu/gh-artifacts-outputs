@@ -18,6 +18,8 @@ jobs:
   build:
     needs: test
     runs-on: ubuntu-latest
+    outputs:
+      script-file: ${{steps.publish.outputs.script-file}} # this output name can be anything, it is used to pass the script file name to the deploy job
     steps:
       - name: Get code
         uses: actions/checkout@v4
@@ -25,6 +27,10 @@ jobs:
         run: npm ci
       - name: Build website
         run: npm run build
+      - name: Publish JS filename
+        id: publish
+        # this step is used to publish the name of the script file to the output of the
+        run: find dist/assests/*.js -type f -execdir echo 'script-file={}' >> $GITHUB_OUTPUT ';' # this script-file name should be not the same as the output name it can be anything
       - name: upload artifacts
         uses: actions/upload-artifact@v4
         with:
@@ -43,5 +49,7 @@ jobs:
           name: dist-files # this name has to match the name used in the upload step
       - name: Output content
         run: ls
+      - name: Output filename
+        run: echo "${{needs.build.outputs.script-file}}" # this is the output name used in the build job
       - name: Deploy
         run: echo "Deploying..."

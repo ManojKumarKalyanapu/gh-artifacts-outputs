@@ -1,0 +1,81 @@
+What Are Job Outputs?
+Job outputs in GitHub Actions allow one job to pass values (like strings or variables) to another job.
+
+They are useful when:
+You want to generate a value in one job (like a version number or file path).
+And reuse it in later jobs.
+
+How to Define and Use Job Outputs
+Step 1: Set Output in a Step (Inside Job A)
+Use echo with the special syntax:
+echo "name=value" >> $GITHUB_OUTPUT
+
+or 
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    outputs:
+      version: ${{ steps.set-version.outputs.version }}
+    steps:
+      - name: Set version number
+        id: set-version
+        run: echo "version=1.0.0" >> $GITHUB_OUTPUT
+
+
+| Part                           | Description                      |
+| ------------------------------ | -------------------------------- |
+| `id:`                          | Used to refer to the step later. |
+| `outputs:`                     | Declares job-level outputs.      |
+| `echo "x=y" >> $GITHUB_OUTPUT` | Sets the step-level output.      |
+
+
+Step 2: Use Job Output in Another Job
+Use ${{ needs.<job_id>.outputs.<output_name> }} in the next job.
+example:
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - name: Use version
+        run: echo "Deploying version ${{ needs.build.outputs.version }}"
+
+
+full example:
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    outputs:
+      commit_sha: ${{ steps.get-sha.outputs.sha }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Get short SHA
+        id: get-sha
+        run: echo "sha=${GITHUB_SHA::7}" >> $GITHUB_OUTPUT
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - name: Print commit SHA
+        run: echo "Deploying commit ${{ needs.build.outputs.commit_sha }}"
+
+
+Tips & Best Practices
+| Tip                            | Explanation                                                 |
+| ------------------------------ | ----------------------------------------------------------- |
+| Use short names for outputs    | Keep output names simple and descriptive.                   |
+| Always set `id:` in step       | Required to define `outputs` from steps.                    |
+| Use `needs:` to access outputs | A job must **depend on** another job to access its outputs. |
+| Avoid secrets in outputs       | Outputs are logged — **never output secrets**.              |
+
+
+summary table:
+
+| Feature       | Syntax                                                       |
+| ------------- | ------------------------------------------------------------ |
+| Define output | `outputs: version: ${{ steps.step-id.outputs.output-name }}` |
+| Set output    | `echo "name=value" >> $GITHUB_OUTPUT`                        |
+| Use output    | `${{ needs.job-id.outputs.output-name }}`                    |
