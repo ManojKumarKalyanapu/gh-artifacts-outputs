@@ -1,0 +1,71 @@
+What is Dependency Caching?
+Caching in GitHub Actions stores files (like package manager dependencies) to speed up workflow runs by avoiding repeated downloads and installs.
+
+For example:
+node_modules (Node.js)
+.venv or ~/.cache/pip (Python)
+~/.m2 (Maven/Java)
+vendor/ (PHP)
+
+GitHub Action for Caching
+GitHub provides a built-in action:
+uses: actions/cache@v4
+
+Basic Syntax
+- name: Cache dependencies
+  uses: actions/cache@v4
+  with:
+    path: node_modules
+    key: ${{ runner.os }}-node-${{ hashFiles('**/package-lock.json') }}
+    restore-keys: |
+      ${{ runner.os }}-node-
+
+| Key            | Description                               |
+| -------------- | ----------------------------------------- |
+| `path`         | Directory or file to cache.               |
+| `key`          | Unique identifier for the cache.          |
+| `restore-keys` | Fallback key(s) if exact match not found. |
+
+
+Example: Node.js Cache
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Cache node_modules
+        uses: actions/cache@v4
+        with:
+          path: ~/.npm
+          key: ${{ runner.os }}-npm-${{ hashFiles('**/package-lock.json') }}
+          restore-keys: |
+            ${{ runner.os }}-npm-
+
+      - name: Install dependencies
+        run: npm install
+
+Why Use hashFiles()?
+It creates a unique hash of your lock file (e.g., package-lock.json).
+When the file changes → cache is invalidated → new dependencies are cached.
+
+| Advantage                | Description                                       |
+| ------------------------ | ------------------------------------------------- |
+| 🚀 Faster builds         | Avoids re-downloading dependencies.               |
+| 📉 Lower bandwidth usage | Useful in CI/CD environments.                     |
+| 🔁 Reuse between runs    | Caches persist across workflow runs and branches. |
+
+
+| Constraint       | Limit                                      |
+| ---------------- | ------------------------------------------ |
+| Max cache size   | 5 GB per cache.                            |
+| Cache scope      | Repository and branch specific.            |
+| Cache expiration | 7 days (default, can go up to 30–90 days). |
+
+Best Practices
+| Tip                                   | Recommendation                                |
+| ------------------------------------- | --------------------------------------------- |
+| ✅ Use unique, meaningful keys         | Based on OS + dependency hash                 |
+| ✅ Include fallback restore keys       | Helps reuse older caches                      |
+| ❌ Don’t cache large or changing files | Use only for stable files like `node_modules` |
+| 🔐 Avoid caching sensitive files      | Never cache `.env` or credentials             |
